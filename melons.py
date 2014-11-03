@@ -1,4 +1,4 @@
-from flask import Flask, request, session, render_template, g, redirect, url_for, flash
+from flask import Flask, request, session, render_template, g, redirect, url_for, flash, Markup
 import model
 import jinja2
 
@@ -30,13 +30,27 @@ def show_melon(id):
 
 @app.route("/cart")
 def shopping_cart():
+    melons = {}
+    total = 0
+    ids = session.get('shopping_cart')
+    if ids:
+        for melon_id in ids:
+            melon = model.get_melon_by_id(melon_id)
+            melons.setdefault(melon_id, {'melon': None, 'count': 0})
+            melons[melon_id]['melon'] = melon
+            melons[melon_id]['count'] += 1
+            total += melon.price
+
     """TODO: Display the contents of the shopping cart. The shopping cart is a
     list held in the session that contains all the melons to be added. Check
     accompanying screenshots for details."""
-    return render_template("cart.html")
+    return render_template("cart.html", melons=melons, total=total)
     
 @app.route("/add_to_cart/<int:id>")
 def add_to_cart(id):
+
+    session.setdefault('shopping_cart', []).append(id)
+    melon = model.get_melon_by_id(id)
     """TODO: Finish shopping cart functionality using session variables to hold
     cart list.
     
@@ -44,7 +58,9 @@ def add_to_cart(id):
     shopping cart page, while displaying the message
     "Successfully added to cart" """
 
-    return "Oops! This needs to be implemented!"
+    flash(Markup("Successfully added to <a href='/cart'>cart</a>"))
+    # return render_template("cart.html")
+    return render_template("melon_details.html", display_melon = melon)
 
 
 @app.route("/login", methods=["GET"])
